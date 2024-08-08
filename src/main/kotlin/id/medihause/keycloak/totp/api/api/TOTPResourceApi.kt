@@ -14,20 +14,44 @@ import org.keycloak.models.UserModel
 import org.keycloak.models.credential.OTPCredentialModel
 import org.keycloak.models.utils.Base32
 import org.keycloak.models.utils.HmacOTP
+import org.keycloak.services.managers.AppAuthManager
 import org.keycloak.utils.CredentialHelper
 import org.keycloak.utils.TotpUtils
 
 class TOTPResourceApi(
     private val session: KeycloakSession,
-    private val user: UserModel
 ) {
     private val totpSecretLength = 20
 
+    private fun authenticateSessionAndGetUser(
+        userId: String
+    ): UserModel {
+        val auth = AppAuthManager.BearerTokenAuthenticator(session).authenticate()
+
+        if (auth == null) {
+            throw NotAuthorizedException("Token not valid", {})
+        } else if (auth.user.serviceAccountClientLink == null) {
+            throw NotAuthorizedException("User is not a service account", {})
+        } else if (auth.token.realmAccess == null || !auth.token.realmAccess.isUserInRole("admin")) {
+            throw NotAuthorizedException("User is not an admin", {})
+        }
+
+        val user = session.users().getUserById(session.context.realm, userId)
+            ?: throw NotFoundException("User not found")
+
+        if (user.serviceAccountClientLink != null) {
+            throw BadRequestException("Cannot manage service account")
+        }
+
+        return user
+    }
+
     @GET
-    @Path("/generate-totp")
+    @Path("/{userId}/generate")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    fun generateTOTP(): Response {
+    fun generateTOTP(@PathParam("userId") userId: String): Response {
+        val user = authenticateSessionAndGetUser(userId)
         val realm = session.context.realm
 
         val secret = HmacOTP.generateSecret(totpSecretLength)
@@ -43,10 +67,12 @@ class TOTPResourceApi(
     }
 
     @POST
-    @Path("/verify-totp")
+    @Path("/{userId}/verify")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    fun verifyTOTP(request: VerifyTOTPRequest): Response {
+    fun verifyTOTP(request: VerifyTOTPRequest, @PathParam("userId") userId: String): Response {
+        val user = authenticateSessionAndGetUser(userId)
+
         if (!VerifyTOTPRequest.validate(request)) {
             return Response.status(Response.Status.BAD_REQUEST).entity(CommonApiResponse("Invalid request")).build()
         }
@@ -76,10 +102,12 @@ class TOTPResourceApi(
     }
 
     @POST
-    @Path("/register-totp")
+    @Path("/{userId}/register")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    fun registerTOTP(request: RegisterTOTPCredentialRequest): Response {
+    fun registerTOTP(request: RegisterTOTPCredentialRequest, @PathParam("userId") userId: String): Response {
+        val user = authenticateSessionAndGetUser(userId)
+
         if (!RegisterTOTPCredentialRequest.validate(request)) {
             return Response.status(Response.Status.BAD_REQUEST).entity(CommonApiResponse("Invalid request")).build()
         }
