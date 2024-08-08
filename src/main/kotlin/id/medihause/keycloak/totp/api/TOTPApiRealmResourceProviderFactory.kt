@@ -8,7 +8,7 @@ import org.keycloak.services.resource.RealmResourceProviderFactory
 
 class TOTPApiRealmResourceProviderFactory: RealmResourceProviderFactory {
     companion object {
-        const val PROVIDER_ID = "medihause-totp-api"
+        const val PROVIDER_ID = "totp-api"
     }
 
     override fun create(p0: KeycloakSession?): RealmResourceProvider {

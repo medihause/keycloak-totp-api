@@ -1,20 +1,20 @@
 package id.medihause.keycloak.totp.api.dto
 
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
 
-@Serializable
-data class RegisterTOTPCredentialRequest (
-    @SerialName("deviceName")
+@JsonSerialize
+data class RegisterTOTPCredentialRequest(
+    @JsonProperty("deviceName")
     val deviceName: String,
 
-    @SerialName("encodedSecret")
+    @JsonProperty("encodedSecret")
     val encodedSecret: String,
 
-    @SerialName("initialCode")
+    @JsonProperty("initialCode")
     val initialCode: String,
 
-    @SerialName("overwrite")
+    @JsonProperty("overwrite")
     val overwrite: Boolean = false
 ) {
     companion object {

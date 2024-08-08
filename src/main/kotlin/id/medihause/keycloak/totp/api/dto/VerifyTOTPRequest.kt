@@ -1,14 +1,14 @@
 package id.medihause.keycloak.totp.api.dto
 
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
 
-@Serializable
+@JsonSerialize
 data class VerifyTOTPRequest(
-    @SerialName("deviceName")
+    @JsonProperty("deviceName")
     val deviceName: String,
 
-    @SerialName("code")
+    @JsonProperty("code")
     val code: String
 ) {
     companion object {

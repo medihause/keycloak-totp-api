@@ -1,5 +1,6 @@
 package id.medihause.keycloak.totp.api.api
 
+import id.medihause.keycloak.totp.api.dto.CommonApiResponse
 import id.medihause.keycloak.totp.api.dto.GenerateTOTPResponse
 import id.medihause.keycloak.totp.api.dto.RegisterTOTPCredentialRequest
 import id.medihause.keycloak.totp.api.dto.VerifyTOTPRequest
@@ -44,9 +45,10 @@ class TOTPResourceApi(
     @POST
     @Path("/verify-totp")
     @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
     fun verifyTOTP(request: VerifyTOTPRequest): Response {
         if (!VerifyTOTPRequest.validate(request)) {
-            throw BadRequestException("Invalid request")
+            return Response.status(Response.Status.BAD_REQUEST).entity(CommonApiResponse("Invalid request")).build()
         }
 
         val credentialModel = user.credentialManager().getStoredCredentialByNameAndType(
@@ -55,10 +57,11 @@ class TOTPResourceApi(
         )
 
         if (credentialModel == null) {
-            throw NotAuthorizedException("TOTP credential not found")
+            return Response.status(Response.Status.UNAUTHORIZED).entity(CommonApiResponse("TOTP credential not found"))
+                .build()
         }
 
-        val totpCredentialProvider = session.getProvider(CredentialProvider::class.java, "otp")
+        val totpCredentialProvider = session.getProvider(CredentialProvider::class.java, "keycloak-otp")
         val totpCredentialModel = OTPCredentialModel.createFromCredentialModel(credentialModel)
         val credentialId = totpCredentialModel.id
 
@@ -66,9 +69,9 @@ class TOTPResourceApi(
             .isValid(UserCredentialModel(credentialId, totpCredentialProvider.type, request.code))
 
         return if (isCredentialValid) {
-            Response.ok().build()
+            Response.ok().entity(CommonApiResponse("TOTP code is valid")).build()
         } else {
-            throw NotAuthorizedException("Invalid TOTP code")
+            Response.status(Response.Status.UNAUTHORIZED).entity(CommonApiResponse("Invalid TOTP code")).build()
         }
     }
 
@@ -78,14 +81,14 @@ class TOTPResourceApi(
     @Produces(MediaType.APPLICATION_JSON)
     fun registerTOTP(request: RegisterTOTPCredentialRequest): Response {
         if (!RegisterTOTPCredentialRequest.validate(request)) {
-            throw BadRequestException("Invalid request")
+            return Response.status(Response.Status.BAD_REQUEST).entity(CommonApiResponse("Invalid request")).build()
         }
 
         val encodedTOTP = request.encodedSecret
         val secret = String(Base32.decode(encodedTOTP))
 
         if (secret.length != totpSecretLength) {
-            throw BadRequestException("Invalid secret")
+            return Response.status(Response.Status.BAD_REQUEST).entity(CommonApiResponse("Invalid secret")).build()
         }
 
         val realm = session.context.realm
@@ -95,14 +98,16 @@ class TOTPResourceApi(
         )
 
         if (credentialModel != null && !request.overwrite) {
-            throw NotAuthorizedException("TOTP credential already exists")
+            return Response.status(Response.Status.CONFLICT).entity(CommonApiResponse("TOTP credential already exists"))
+                .build()
         }
 
         val totpCredentialModel = OTPCredentialModel.createFromPolicy(realm, secret, request.deviceName)
         if (!CredentialHelper.createOTPCredential(session, realm, user, request.initialCode, totpCredentialModel)) {
-            throw InternalServerErrorException("Failed to create TOTP credential")
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                .entity(CommonApiResponse("Failed to create TOTP credential")).build()
         }
 
-        return Response.ok().build()
+        return Response.status(Response.Status.CREATED).entity(CommonApiResponse("TOTP credential registered")).build()
     }
 }
