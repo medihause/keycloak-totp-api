@@ -32,7 +32,7 @@ class TOTPResourceApi(
             throw NotAuthorizedException("Token not valid", {})
         } else if (auth.user.serviceAccountClientLink == null) {
             throw NotAuthorizedException("User is not a service account", {})
-        } else if (auth.token.realmAccess == null || !auth.token.realmAccess.isUserInRole("admin")) {
+        } else if (auth.token.realmAccess == null || !auth.token.realmAccess.isUserInRole("manage-totp")) {
             throw NotAuthorizedException("User is not an admin", {})
         }
 
