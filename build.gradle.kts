@@ -13,9 +13,9 @@ repositories {
 }
 
 dependencies {
-    implementation("org.keycloak:keycloak-services:25.0.2")
-    implementation("org.keycloak:keycloak-server-spi:25.0.2")
-    implementation("org.keycloak:keycloak-server-spi-private:25.0.2")
+    implementation("org.keycloak:keycloak-services:26.0.0")
+    implementation("org.keycloak:keycloak-server-spi:26.0.0")
+    implementation("org.keycloak:keycloak-server-spi-private:26.0.0")
     implementation("jakarta.ws.rs:jakarta.ws.rs-api:3.1.0")
     implementation("org.jetbrains.kotlin:kotlin-stdlib:2.0.0")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.14.2")
