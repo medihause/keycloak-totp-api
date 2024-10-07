@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "id.medihause"
-version = "1.0.0"
+version = "1.0.1-kc26"
 
 repositories {
     mavenCentral()
@@ -39,5 +39,6 @@ tasks {
             include(dependency("org.jetbrains.kotlin:kotlin-stdlib:2.0.0"))
         }
         dependsOn(build)
+        archiveFileName.set("keycloak-totp-api.jar")
     }
 }
